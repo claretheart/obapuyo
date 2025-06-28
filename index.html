@@ -278,6 +278,13 @@
             grid-row: 1;
         }
         
+        /* モバイルでBGMボタンを隠す */
+        @media (max-width: 768px) {
+            .btn-bgm {
+                display: none;
+            }
+        }
+        
         @media (max-width: 768px) {
             body {
                 padding: 0;
@@ -1052,21 +1059,11 @@
                 }
                 
                 if (bgmEnabled) {
-                    // モバイル対応：autoplayは期待せず、必ずユーザーインタラクションを待つ
+                    // デスクトップとモバイル両方でユーザーインタラクションを待つ
                     console.log('BGM initialized, waiting for user interaction...');
                     document.addEventListener('click', startBGMOnFirstClick, { once: true });
                     document.addEventListener('touchstart', startBGMOnFirstClick, { once: true });
                     document.addEventListener('keydown', startBGMOnFirstClick, { once: true });
-                    
-                    // デスクトップでは自動再生を試行
-                    if (!(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))) {
-                        const playPromise = bgmAudio.play();
-                        if (playPromise !== undefined) {
-                            playPromise.catch(e => {
-                                console.log('Desktop BGM autoplay blocked:', e);
-                            });
-                        }
-                    }
                 }
             } catch (error) {
                 console.log('BGM initialization error:', error);
@@ -1366,10 +1363,6 @@
         function setupTouchControls() {
             document.getElementById('btn-left').addEventListener('click', () => {
                 resumeAudioContext(); // タッチ操作でAudioContextを有効化
-                // BGM再生も試行（まだ再生されていない場合）
-                if (bgmAudio && bgmEnabled && bgmAudio.paused) {
-                    startBGMOnFirstClick();
-                }
                 if (!gameRunning || !currentPiece || gamePaused) return;
                 currentPiece.move(-1, 0);
                 if (!currentPiece.isValidPosition()) {
@@ -1379,10 +1372,6 @@
             });
             
             document.getElementById('btn-right').addEventListener('click', () => {
-                // BGM再生も試行（まだ再生されていない場合）
-                if (bgmAudio && bgmEnabled && bgmAudio.paused) {
-                    startBGMOnFirstClick();
-                }
                 if (!gameRunning || !currentPiece || gamePaused) return;
                 currentPiece.move(1, 0);
                 if (!currentPiece.isValidPosition()) {
@@ -1392,10 +1381,6 @@
             });
             
             document.getElementById('btn-down').addEventListener('click', () => {
-                // BGM再生も試行（まだ再生されていない場合）
-                if (bgmAudio && bgmEnabled && bgmAudio.paused) {
-                    startBGMOnFirstClick();
-                }
                 if (!gameRunning || !currentPiece || gamePaused) return;
                 clearTimeout(fallTimer);
                 gameLoop();
@@ -1403,10 +1388,6 @@
             
             document.getElementById('btn-rotate').addEventListener('click', () => {
                 resumeAudioContext(); // タッチ操作でAudioContextを有効化
-                // BGM再生も試行（まだ再生されていない場合）
-                if (bgmAudio && bgmEnabled && bgmAudio.paused) {
-                    startBGMOnFirstClick();
-                }
                 if (!gameRunning || !currentPiece || gamePaused) return;
                 currentPiece.rotate();
                 renderBoard();
