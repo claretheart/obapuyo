@@ -443,12 +443,12 @@
         // ぷよの画像（提供された6つの画像ファイルを使用）
         const PUYO_IMAGES = [
             '',
-            'oba1.png',
-            'oba2.png', 
-            'oba3.png',
-            'oba4.png',
-            'ob5.png',
-            'oba6.png'
+            './oba1.png',
+            './oba2.png', 
+            './oba3.png',
+            './oba4.png',
+            './ob5.png',
+            './oba6.png'
         ];
 
         let board = [];
@@ -854,25 +854,35 @@
         }
 
         async function gameLoop() {
-            if (!gameRunning || gamePaused) {
-                if (gameRunning && gamePaused) {
-                    fallTimer = setTimeout(gameLoop, 100); // パース中も定期的にチェック
-                }
-                return;
-            }
-            
-            currentPiece.move(0, 1);
-            if (!currentPiece.isValidPosition()) {
-                currentPiece.move(0, -1);
-                placePiece();
-                await checkChains();
-                if (!spawnNewPiece()) {
+            try {
+                if (!gameRunning || gamePaused) {
+                    if (gameRunning && gamePaused) {
+                        fallTimer = setTimeout(gameLoop, 100); // パース中も定期的にチェック
+                    }
                     return;
                 }
+                
+                if (!currentPiece) {
+                    console.error('No current piece in game loop');
+                    return;
+                }
+                
+                currentPiece.move(0, 1);
+                if (!currentPiece.isValidPosition()) {
+                    currentPiece.move(0, -1);
+                    placePiece();
+                    await checkChains();
+                    if (!spawnNewPiece()) {
+                        return;
+                    }
+                }
+                
+                renderBoard();
+                fallTimer = setTimeout(gameLoop, fallSpeed);
+            } catch (error) {
+                console.error('Error in game loop:', error);
+                gameRunning = false;
             }
-            
-            renderBoard();
-            fallTimer = setTimeout(gameLoop, fallSpeed);
         }
 
         function gameOver() {
@@ -1003,15 +1013,25 @@
         }
 
         function startGame() {
-            initBoard();
-            createGameBoard();
-            gameRunning = true;
-            gamePaused = false;
-            nextPiece = null;
-            spawnNewPiece();
-            initBGM();
-            initSoundEffects();
-            gameLoop();
+            console.log('Starting game...');
+            try {
+                initBoard();
+                console.log('Board initialized');
+                createGameBoard();
+                console.log('Game board created');
+                gameRunning = true;
+                gamePaused = false;
+                nextPiece = null;
+                spawnNewPiece();
+                console.log('First piece spawned');
+                initBGM();
+                initSoundEffects();
+                console.log('Audio initialized');
+                gameLoop();
+                console.log('Game loop started');
+            } catch (error) {
+                console.error('Error starting game:', error);
+            }
         }
         
         function initBGM() {
@@ -1396,4 +1416,60 @@
             document.getElementById('btn-pause').addEventListener('click', () => {
                 togglePause();
             });
-       
+            
+            document.getElementById('btn-bgm').addEventListener('click', () => {
+                toggleBGM();
+            });
+            
+            // タッチイベントの追加（長押し対応）
+            let touchInterval = null;
+            
+            ['btn-left', 'btn-right', 'btn-down'].forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    btn.click();
+                    
+                    if (btnId === 'btn-down') {
+                        touchInterval = setInterval(() => {
+                            btn.click();
+                        }, 100);
+                    } else {
+                        touchInterval = setInterval(() => {
+                            btn.click();
+                        }, 150);
+                    }
+                });
+                
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    clearInterval(touchInterval);
+                });
+                
+                btn.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    clearInterval(touchInterval);
+                });
+            });
+        }
+
+        // DOM読み込み完了後にゲーム開始
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, starting game...');
+            startGame();
+            setupTouchControls();
+        });
+        
+        // フォールバック：既にDOMが読み込まれている場合
+        if (document.readyState === 'loading') {
+            // まだ読み込み中
+        } else {
+            // 既に読み込み完了
+            console.log('DOM already loaded, starting game immediately...');
+            startGame();
+            setupTouchControls();
+        }
+    </script>
+</body>
+</html>
