@@ -1052,14 +1052,20 @@
                 }
                 
                 if (bgmEnabled) {
-                    const playPromise = bgmAudio.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(e => {
-                            console.log('BGM autoplay blocked, waiting for user interaction:', e);
-                            document.addEventListener('click', startBGMOnFirstClick, { once: true });
-                            document.addEventListener('touchstart', startBGMOnFirstClick, { once: true });
-                            document.addEventListener('keydown', startBGMOnFirstClick, { once: true });
-                        });
+                    // モバイル対応：autoplayは期待せず、必ずユーザーインタラクションを待つ
+                    console.log('BGM initialized, waiting for user interaction...');
+                    document.addEventListener('click', startBGMOnFirstClick, { once: true });
+                    document.addEventListener('touchstart', startBGMOnFirstClick, { once: true });
+                    document.addEventListener('keydown', startBGMOnFirstClick, { once: true });
+                    
+                    // デスクトップでは自動再生を試行
+                    if (!(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))) {
+                        const playPromise = bgmAudio.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(e => {
+                                console.log('Desktop BGM autoplay blocked:', e);
+                            });
+                        }
                     }
                 }
             } catch (error) {
@@ -1218,22 +1224,43 @@
         }
         
         function startBGMOnFirstClick() {
+            console.log('User interaction detected, trying to start BGM...');
+            
             if (bgmAudio && bgmEnabled) {
-                // BGMの再生状態を確認
-                if (bgmAudio.readyState >= 2) { // HAVE_CURRENT_DATA 以上
-                    bgmAudio.play().catch(e => {
-                        console.log('BGM play failed:', e);
-                        // 再生に失敗した場合、BGMを無効化
-                        bgmEnabled = false;
-                    });
-                } else {
-                    console.log('BGM not ready, waiting for load...');
-                    bgmAudio.addEventListener('canplay', () => {
-                        bgmAudio.play().catch(e => {
-                            console.log('BGM play failed after load:', e);
-                            bgmEnabled = false;
+                // モバイルで確実に再生するための強化された処理
+                const attemptPlay = () => {
+                    console.log('Attempting BGM play, readyState:', bgmAudio.readyState);
+                    const playPromise = bgmAudio.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log('BGM started successfully');
+                            // 再生成功時に現在のスピードを適用
+                            updateBGMSpeed(lastSpeedLevel);
+                        }).catch(e => {
+                            console.log('BGM play failed:', e);
+                            // 少し待ってリトライ
+                            setTimeout(() => {
+                                console.log('Retrying BGM play...');
+                                bgmAudio.play().catch(retryError => {
+                                    console.log('BGM retry failed:', retryError);
+                                    bgmEnabled = false;
+                                });
+                            }, 500);
                         });
-                    }, { once: true });
+                    }
+                };
+                
+                // BGMの読み込み状態に応じて処理を分岐
+                if (bgmAudio.readyState >= 2) { // HAVE_CURRENT_DATA 以上
+                    attemptPlay();
+                } else if (bgmAudio.readyState === 0) { // HAVE_NOTHING
+                    console.log('BGM not loaded, reloading...');
+                    bgmAudio.load(); // 強制的に再読み込み
+                    bgmAudio.addEventListener('canplay', attemptPlay, { once: true });
+                } else {
+                    console.log('BGM loading, waiting...');
+                    bgmAudio.addEventListener('canplay', attemptPlay, { once: true });
                 }
             }
             // AudioContextも同時に有効化
@@ -1339,6 +1366,10 @@
         function setupTouchControls() {
             document.getElementById('btn-left').addEventListener('click', () => {
                 resumeAudioContext(); // タッチ操作でAudioContextを有効化
+                // BGM再生も試行（まだ再生されていない場合）
+                if (bgmAudio && bgmEnabled && bgmAudio.paused) {
+                    startBGMOnFirstClick();
+                }
                 if (!gameRunning || !currentPiece || gamePaused) return;
                 currentPiece.move(-1, 0);
                 if (!currentPiece.isValidPosition()) {
@@ -1348,6 +1379,10 @@
             });
             
             document.getElementById('btn-right').addEventListener('click', () => {
+                // BGM再生も試行（まだ再生されていない場合）
+                if (bgmAudio && bgmEnabled && bgmAudio.paused) {
+                    startBGMOnFirstClick();
+                }
                 if (!gameRunning || !currentPiece || gamePaused) return;
                 currentPiece.move(1, 0);
                 if (!currentPiece.isValidPosition()) {
@@ -1357,6 +1392,10 @@
             });
             
             document.getElementById('btn-down').addEventListener('click', () => {
+                // BGM再生も試行（まだ再生されていない場合）
+                if (bgmAudio && bgmEnabled && bgmAudio.paused) {
+                    startBGMOnFirstClick();
+                }
                 if (!gameRunning || !currentPiece || gamePaused) return;
                 clearTimeout(fallTimer);
                 gameLoop();
@@ -1364,6 +1403,10 @@
             
             document.getElementById('btn-rotate').addEventListener('click', () => {
                 resumeAudioContext(); // タッチ操作でAudioContextを有効化
+                // BGM再生も試行（まだ再生されていない場合）
+                if (bgmAudio && bgmEnabled && bgmAudio.paused) {
+                    startBGMOnFirstClick();
+                }
                 if (!gameRunning || !currentPiece || gamePaused) return;
                 currentPiece.rotate();
                 renderBoard();
@@ -1372,47 +1415,4 @@
             document.getElementById('btn-pause').addEventListener('click', () => {
                 togglePause();
             });
-            
-            document.getElementById('btn-bgm').addEventListener('click', () => {
-                toggleBGM();
-            });
-            
-            // タッチイベントの追加（長押し対応）
-            let touchInterval = null;
-            
-            ['btn-left', 'btn-right', 'btn-down'].forEach(btnId => {
-                const btn = document.getElementById(btnId);
-                
-                btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    btn.click();
-                    
-                    if (btnId === 'btn-down') {
-                        touchInterval = setInterval(() => {
-                            btn.click();
-                        }, 100);
-                    } else {
-                        touchInterval = setInterval(() => {
-                            btn.click();
-                        }, 150);
-                    }
-                });
-                
-                btn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    clearInterval(touchInterval);
-                });
-                
-                btn.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    clearInterval(touchInterval);
-                });
-            });
-        }
-
-        // ゲーム開始
-        startGame();
-        setupTouchControls();
-    </script>
-</body>
-</html>
+       
