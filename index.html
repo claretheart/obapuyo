@@ -5,18 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>おばぷよ</title>
     <style>
-        body {
+        * {
+            box-sizing: border-box;
+        }
+        
+        html, body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-            overflow-x: hidden;
+            width: 100%;
+            height: 100%;
+        }
+        
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            font-family: 'Arial', sans-serif !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
+            min-height: 100vh !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
         }
 
         .game-container {
@@ -1461,14 +1472,16 @@
             setupTouchControls();
         });
         
-        // フォールバック：既にDOMが読み込まれている場合
+        // フォールバック：既にDOMが読み込まれている場合  
         if (document.readyState === 'loading') {
             // まだ読み込み中
         } else {
             // 既に読み込み完了
-            console.log('DOM already loaded, starting game immediately...');
-            startGame();
-            setupTouchControls();
+            console.log('DOM already loaded, starting game with delay...');
+            setTimeout(() => {
+                startGame();
+                setupTouchControls();
+            }, 100);
         }
     </script>
 </body>
