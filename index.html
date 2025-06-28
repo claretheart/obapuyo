@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>おばぷよ</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .game-board {
+            width: 100%;
+            max-width: 320px;
+            height: 480px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #fff;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(12, 1fr);
+            margin: 0 auto;
+        }
+
+        .cell {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .puyo {
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .controls h3 {
+            margin-bottom: 10px;
+        }
+
+        .controls p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .score {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .score h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .mobile-info {
+            display: none;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .mobile-score {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .mobile-next {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+        
+        .mobile-next-puyo {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .chain-display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            text-align: center;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .score-popup {
+            position: absolute;
+            color: #ffff00;
+            font-weight: bold;
+            font-size: 18px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: scoreFloat 1.5s ease-out forwards;
+        }
+        
+        @keyframes scoreFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+
+        .next-piece {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .next-preview {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .next-puyo {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .game-over button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 16px;
+        }
+
+        .game-over button:hover {
+            background: #5a6fd8;
+        }
+        
+        .mobile-controls {
+            display: none;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 8px;
+            width: 100%;
+            max-width: 280px;
+            height: 100px;
+            margin: 5px auto;
+            justify-self: center;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            min-height: 45px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        .btn-down {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        
+        .btn-right {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        .btn-rotate {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        
+        .btn-pause {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        
+        .btn-bgm {
+            grid-column: 3;
+            grid-row: 1;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+                height: 100vh;
+                overflow: hidden;
+            }
+            
+            .game-container {
+                padding: 5px;
+                margin: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                max-width: 100vw;
+                box-sizing: border-box;
+            }
+            
+            .mobile-info {
+                display: flex;
+                flex-shrink: 0;
+                margin-bottom: 5px;
+                padding: 5px;
+            }
+            
+            .chain-display {
+                margin-bottom: 3px;
+                padding: 3px;
+                font-size: 10px;
+                flex-shrink: 0;
+            }
+            
+            .game-board {
+                width: 100%;
+                max-width: 280px;
+                height: calc(100vh - 180px);
+                max-height: 400px;
+                flex-shrink: 1;
+                margin: 0 auto;
+            }
+            
+            .mobile-controls {
+                display: grid;
+                max-width: 280px;
+                height: 100px;
+                margin: 5px auto 5px;
+                flex-shrink: 0;
+            }
+            
+            .controls {
+                display: none;
+            }
+            
+            .score {
+                display: none;
+            }
+            
+            .next-piece {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 3px;
+            }
+            
+            .game-board {
+                max-width: 260px;
+                height: calc(100vh - 160px);
+                max-height: 380px;
+            }
+            
+            .control-btn {
+                font-size: 11px;
+                padding: 6px;
+                min-height: 38px;
+            }
+            
+            .mobile-controls {
+                max-width: 260px;
+                height: 85px;
+                gap: 6px;
+                margin: 3px auto 3px;
+            }
+            
+            .mobile-score {
+                font-size: 11px;
+            }
+            
+            .mobile-next-puyo {
+                width: 14px;
+                height: 14px;
+            }
+            
+            .mobile-info {
+                padding: 3px;
+                margin-bottom: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="score">
+            <h2>スコア: <span id="score">0</span></h2>
+        </div>
+        
+        <div class="mobile-info">
+            <div class="mobile-score">スコア: <span id="mobile-score">0</span></div>
+            <div class="mobile-next">
+                Next: <div id="mobile-next-preview"></div>
+            </div>
+        </div>
+        
+        <div class="chain-display" id="chain-display" style="display: none;">
+            <span id="chain-text">連鎖: 0</span>
+        </div>
+        
+        <div class="next-piece">
+            <h3>Next</h3>
+            <div class="next-preview" id="next-preview"></div>
+        </div>
+        
+        <div class="game-board" id="game-board"></div>
+        
+        <div class="controls">
+            <h3>操作方法</h3>
+            <p>A D : 移動</p>
+            <p>S : 落下速度アップ</p>
+            <p>エンター : 回転</p>
+            <p>P : 一時停止/再開</p>
+            <p>M : BGM ON/OFF</p>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="control-btn btn-pause" id="btn-pause">P</div>
+            <div class="control-btn btn-rotate" id="btn-rotate">回転</div>
+            <div class="control-btn btn-bgm" id="btn-bgm">BGM</div>
+            <div class="control-btn btn-left" id="btn-left">←</div>
+            <div class="control-btn btn-down" id="btn-down">↓</div>
+            <div class="control-btn btn-right" id="btn-right">→</div>
+        </div>
+        
+        <div class="game-over" id="game-over">
+            <h2>ゲームオーバー</h2>
+            <p>最終スコア: <span id="final-score">0</span></p>
+            <button onclick="restartGame()">もう一度</button>
+        </div>
+    </div>
+
+    <script>
+        const BOARD_WIDTH = 8;
+        const BOARD_HEIGHT = 12;
+        const PUYO_TYPES = 6;
+        
+        // ぷよの画像（提供された6つの画像ファイルを使用）
+        const PUYO_IMAGES = [
+            '',
+            'oba1.png',
+            'oba2.png', 
+            'oba3.png',
+            'oba4.png',
+            'ob5.png',
+            'oba6.png'
+        ];
+
+        let board = [];
+        let currentPiece = null;
+        let nextPiece = null;
+        let score = 0;
+        let gameRunning = false;
+        let gamePaused = false;
+        let fallTimer = null;
+        let fallSpeed = 1000;
+        let baseFallSpeed = 1000;
+        let chainDisplayTimer = null;
+        let bgmAudio = null;
+        let bgmEnabled = true;
+        let lastSpeedLevel = 0;
+        let soundEffects = {};
+
+        class Puyo {
+            constructor(type, x, y) {
+                this.type = type;
+                this.x = x;
+                this.y = y;
+            }
+        }
+
+        class PuyoPair {
+            constructor() {
+                this.puyo1 = new Puyo(Math.floor(Math.random() * PUYO_TYPES) + 1, 3, 0);
+                this.puyo2 = new Puyo(Math.floor(Math.random() * PUYO_TYPES) + 1, 3, -1);
+                this.rotation = 0;
+            }
+
+            rotate() {
+                const oldRotation = this.rotation;
+                const oldPuyo2X = this.puyo2.x;
+                const oldPuyo2Y = this.puyo2.y;
+                
+                this.rotation = (this.rotation + 1) % 4;
+                this.updatePositions();
+                
+                // 回転後の位置が無効な場合、位置調整を試行
+                if (!this.isValidPosition()) {
+                    // まず左右の調整を試行
+                    for (let dx = -1; dx <= 1; dx++) {
+                        this.puyo1.x += dx;
+                        this.updatePositions();
+                        if (this.isValidPosition()) {
+                            return; // 成功
+                        }
+                        this.puyo1.x -= dx; // 戻す
+                    }
+                    
+                    // 上下の調整を試行
+                    for (let dy = -1; dy <= 1; dy++) {
+                        this.puyo1.y += dy;
+                        this.updatePositions();
+                        if (this.isValidPosition()) {
+                            return; // 成功
+                        }
+                        this.puyo1.y -= dy; // 戻す
+                    }
+                    
+                    // 通常の回転が無理な場合、上下入れ替えを試行
+                    this.rotation = oldRotation;
+                    this.puyo2.x = oldPuyo2X;
+                    this.puyo2.y = oldPuyo2Y;
+                    
+                    if (this.canSwapPuyos()) {
+                        this.swapPuyos();
+                        return; // 入れ替え成功
+                    }
+                }
+            }
+            
+            canSwapPuyos() {
+                // 現在の配置で上下（または左右）のぷよの位置を入れ替えられるかチェック
+                const tempX = this.puyo1.x;
+                const tempY = this.puyo1.y;
+                const tempType = this.puyo1.type;
+                
+                this.puyo1.x = this.puyo2.x;
+                this.puyo1.y = this.puyo2.y;
+                this.puyo1.type = this.puyo2.type;
+                
+                this.puyo2.x = tempX;
+                this.puyo2.y = tempY;
+                this.puyo2.type = tempType;
+                
+                const isValid = this.isValidPosition();
+                
+                // 元に戻す
+                this.puyo2.x = this.puyo1.x;
+                this.puyo2.y = this.puyo1.y;
+                this.puyo2.type = this.puyo1.type;
+                
+                this.puyo1.x = tempX;
+                this.puyo1.y = tempY;
+                this.puyo1.type = tempType;
+                
+                return isValid;
+            }
+            
+            swapPuyos() {
+                // ぷよの位置と種類を完全に入れ替える
+                const tempX = this.puyo1.x;
+                const tempY = this.puyo1.y;
+                const tempType = this.puyo1.type;
+                
+                this.puyo1.x = this.puyo2.x;
+                this.puyo1.y = this.puyo2.y;
+                this.puyo1.type = this.puyo2.type;
+                
+                this.puyo2.x = tempX;
+                this.puyo2.y = tempY;
+                this.puyo2.type = tempType;
+            }
+
+            updatePositions() {
+                const baseX = this.puyo1.x;
+                const baseY = this.puyo1.y;
+                
+                switch(this.rotation) {
+                    case 0: // 上
+                        this.puyo2.x = baseX;
+                        this.puyo2.y = baseY - 1;
+                        break;
+                    case 1: // 右
+                        this.puyo2.x = baseX + 1;
+                        this.puyo2.y = baseY;
+                        break;
+                    case 2: // 下
+                        this.puyo2.x = baseX;
+                        this.puyo2.y = baseY + 1;
+                        break;
+                    case 3: // 左
+                        this.puyo2.x = baseX - 1;
+                        this.puyo2.y = baseY;
+                        break;
+                }
+            }
+
+            move(dx, dy) {
+                this.puyo1.x += dx;
+                this.puyo1.y += dy;
+                this.updatePositions();
+            }
+
+            isValidPosition() {
+                return this.isValidPuyo(this.puyo1) && this.isValidPuyo(this.puyo2);
+            }
+
+            isValidPuyo(puyo) {
+                if (puyo.x < 0 || puyo.x >= BOARD_WIDTH) return false;
+                if (puyo.y >= BOARD_HEIGHT) return false;
+                if (puyo.y >= 0 && board[puyo.y][puyo.x] !== 0) return false;
+                return true;
+            }
+        }
+
+        function initBoard() {
+            board = [];
+            for (let i = 0; i < BOARD_HEIGHT; i++) {
+                board[i] = new Array(BOARD_WIDTH).fill(0);
+            }
+        }
+
+        function createGameBoard() {
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+            
+            for (let i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `cell-${i}`;
+                gameBoard.appendChild(cell);
+            }
+        }
+
+        function renderBoard() {
+            for (let y = 0; y < BOARD_HEIGHT; y++) {
+                for (let x = 0; x < BOARD_WIDTH; x++) {
+                    const cellIndex = y * BOARD_WIDTH + x;
+                    const cell = document.getElementById(`cell-${cellIndex}`);
+                    cell.innerHTML = '';
+                    
+                    if (board[y][x] !== 0) {
+                        const puyo = document.createElement('div');
+                        puyo.className = 'puyo';
+                        puyo.style.backgroundImage = `url(${PUYO_IMAGES[board[y][x]]})`;
+                        cell.appendChild(puyo);
+                    }
+                }
+            }
+            
+            // 現在のピースを描画
+            if (currentPiece) {
+                drawPuyo(currentPiece.puyo1);
+                drawPuyo(currentPiece.puyo2);
+            }
+        }
+
+        function drawPuyo(puyo) {
+            if (puyo.y >= 0) {
+                const cellIndex = puyo.y * BOARD_WIDTH + puyo.x;
+                const cell = document.getElementById(`cell-${cellIndex}`);
+                if (cell) {
+                    const puyoElement = document.createElement('div');
+                    puyoElement.className = 'puyo';
+                    puyoElement.style.backgroundImage = `url(${PUYO_IMAGES[puyo.type]})`;
+                    cell.appendChild(puyoElement);
+                }
+            }
+        }
+
+        function placePiece() {
+            if (currentPiece.puyo1.y >= 0) {
+                board[currentPiece.puyo1.y][currentPiece.puyo1.x] = currentPiece.puyo1.type;
+            }
+            if (currentPiece.puyo2.y >= 0) {
+                board[currentPiece.puyo2.y][currentPiece.puyo2.x] = currentPiece.puyo2.type;
+            }
+            // ピース配置後に重力を適用
+            applyGravity();
+        }
+
+        async function checkChains() {
+            let totalCleared = 0;
+            let chainCount = 0;
+            
+            while (true) {
+                const cleared = clearConnectedPuyos();
+                if (cleared === 0) break;
+                
+                totalCleared += cleared;
+                chainCount++;
+                
+                // 連鎖表示を更新
+                if (chainCount > 0) {
+                    showChainDisplay(chainCount);
+                }
+                
+                dropPuyos();
+                applyGravity();
+                
+                // 連鎖間に短い遅延を追加
+                if (chainCount > 1) {
+                    renderBoard();
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            }
+            
+            if (totalCleared > 0) {
+                // 連鎖音を再生
+                if (chainCount > 1 && soundEffects.chain) {
+                    soundEffects.chain(chainCount);
+                }
+                
+                // 改良されたスコア計算（連鎖ボーナス付き）
+                const baseScore = totalCleared * 10;
+                const chainBonus = chainCount > 1 ? Math.pow(chainCount, 2) * 50 : 0;
+                const earnedScore = baseScore + chainBonus;
+                
+                score += earnedScore;
+                updateScore();
+                updateGameSpeed();
+                
+                // スコアポップアップ表示
+                showScorePopup(earnedScore, chainCount);
+            }
+            
+            // 連鎖表示を隠す
+            hideChainDisplay();
+        }
+
+        function clearConnectedPuyos() {
+            let cleared = 0;
+            let toRemove = [];
+            let visited = [];
+            
+            for (let i = 0; i < BOARD_HEIGHT; i++) {
+                visited[i] = new Array(BOARD_WIDTH).fill(false);
+            }
+            
+            for (let y = 0; y < BOARD_HEIGHT; y++) {
+                for (let x = 0; x < BOARD_WIDTH; x++) {
+                    if (!visited[y][x] && board[y][x] !== 0) {
+                        const connected = findConnected(x, y, board[y][x], visited);
+                        if (connected.length >= 4) {
+                            toRemove = toRemove.concat(connected);
+                        }
+                    }
+                }
+            }
+            
+            if (toRemove.length > 0) {
+                // 消し音を再生
+                if (soundEffects.clear) {
+                    soundEffects.clear();
+                }
+            }
+            
+            for (let pos of toRemove) {
+                board[pos.y][pos.x] = 0;
+                cleared++;
+            }
+            
+            return cleared;
+        }
+
+        function findConnected(x, y, type, visited) {
+            if (x < 0 || x >= BOARD_WIDTH || y < 0 || y >= BOARD_HEIGHT) return [];
+            if (visited[y][x] || board[y][x] !== type) return [];
+            
+            visited[y][x] = true;
+            let connected = [{x, y}];
+            
+            connected = connected.concat(findConnected(x + 1, y, type, visited));
+            connected = connected.concat(findConnected(x - 1, y, type, visited));
+            connected = connected.concat(findConnected(x, y + 1, type, visited));
+            connected = connected.concat(findConnected(x, y - 1, type, visited));
+            
+            return connected;
+        }
+
+        function dropPuyos() {
+            for (let x = 0; x < BOARD_WIDTH; x++) {
+                let writePos = BOARD_HEIGHT - 1;
+                for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+                    if (board[y][x] !== 0) {
+                        board[writePos][x] = board[y][x];
+                        if (writePos !== y) {
+                            board[y][x] = 0;
+                        }
+                        writePos--;
+                    }
+                }
+            }
+        }
+        
+        function applyGravity() {
+            let changed = true;
+            while (changed) {
+                changed = false;
+                for (let y = BOARD_HEIGHT - 2; y >= 0; y--) {
+                    for (let x = 0; x < BOARD_WIDTH; x++) {
+                        if (board[y][x] !== 0 && board[y + 1][x] === 0) {
+                            board[y + 1][x] = board[y][x];
+                            board[y][x] = 0;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        function spawnNewPiece() {
+            currentPiece = nextPiece || new PuyoPair();
+            nextPiece = new PuyoPair();
+            updateNextPreview();
+            
+            if (!currentPiece.isValidPosition()) {
+                gameOver();
+                return false;
+            }
+            return true;
+        }
+
+        function updateNextPreview() {
+            const preview = document.getElementById('next-preview');
+            preview.innerHTML = '';
+            
+            const mobilePreview = document.getElementById('mobile-next-preview');
+            if (mobilePreview) {
+                mobilePreview.innerHTML = '';
+            }
+            
+            if (nextPiece) {
+                const puyo1 = document.createElement('div');
+                puyo1.className = 'next-puyo';
+                puyo1.style.backgroundImage = `url(${PUYO_IMAGES[nextPiece.puyo1.type]})`;
+                
+                const puyo2 = document.createElement('div');
+                puyo2.className = 'next-puyo';
+                puyo2.style.backgroundImage = `url(${PUYO_IMAGES[nextPiece.puyo2.type]})`;
+                
+                preview.appendChild(puyo1);
+                preview.appendChild(puyo2);
+                
+                // モバイル用のNext表示
+                if (mobilePreview) {
+                    const mobilePuyo1 = document.createElement('div');
+                    mobilePuyo1.className = 'mobile-next-puyo';
+                    mobilePuyo1.style.backgroundImage = `url(${PUYO_IMAGES[nextPiece.puyo1.type]})`;
+                    
+                    const mobilePuyo2 = document.createElement('div');
+                    mobilePuyo2.className = 'mobile-next-puyo';
+                    mobilePuyo2.style.backgroundImage = `url(${PUYO_IMAGES[nextPiece.puyo2.type]})`;
+                    
+                    mobilePreview.appendChild(mobilePuyo1);
+                    mobilePreview.appendChild(mobilePuyo2);
+                }
+            }
+        }
+
+        async function gameLoop() {
+            if (!gameRunning || gamePaused) {
+                if (gameRunning && gamePaused) {
+                    fallTimer = setTimeout(gameLoop, 100); // パース中も定期的にチェック
+                }
+                return;
+            }
+            
+            currentPiece.move(0, 1);
+            if (!currentPiece.isValidPosition()) {
+                currentPiece.move(0, -1);
+                placePiece();
+                await checkChains();
+                if (!spawnNewPiece()) {
+                    return;
+                }
+            }
+            
+            renderBoard();
+            fallTimer = setTimeout(gameLoop, fallSpeed);
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            clearTimeout(fallTimer);
+            if (bgmAudio) {
+                bgmAudio.pause();
+            }
+            
+            // ゲームオーバー音を再生
+            if (soundEffects.gameOver) {
+                soundEffects.gameOver();
+            }
+            
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over').style.display = 'block';
+        }
+
+        function restartGame() {
+            gameRunning = false;
+            clearTimeout(fallTimer);
+            clearTimeout(chainDisplayTimer);
+            score = 0;
+            fallSpeed = baseFallSpeed;
+            lastSpeedLevel = 0;
+            
+            // BGMの速度もリセット
+            if (bgmAudio) {
+                bgmAudio.playbackRate = 1.0;
+            }
+            
+            updateScore();
+            document.getElementById('game-over').style.display = 'none';
+            hideChainDisplay();
+            startGame();
+        }
+        
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            const mobileScore = document.getElementById('mobile-score');
+            if (mobileScore) {
+                mobileScore.textContent = score;
+            }
+        }
+        
+        function updateGameSpeed() {
+            const currentSpeedLevel = Math.floor(score / 200);
+            
+            if (currentSpeedLevel > lastSpeedLevel) {
+                lastSpeedLevel = currentSpeedLevel;
+                fallSpeed = baseFallSpeed / Math.pow(1.1, currentSpeedLevel);
+                
+                // BGMの速度も同時に上げる
+                updateBGMSpeed(currentSpeedLevel);
+                
+                // スピードアップ通知
+                showSpeedUpNotification(currentSpeedLevel + 1);
+            }
+        }
+        
+        function updateBGMSpeed(speedLevel) {
+            if (bgmAudio && !bgmAudio.paused) {
+                const newPlaybackRate = Math.pow(1.1, speedLevel);
+                bgmAudio.playbackRate = newPlaybackRate;
+            }
+        }
+        
+        function showSpeedUpNotification(level) {
+            const gameBoard = document.getElementById('game-board');
+            const notification = document.createElement('div');
+            notification.className = 'score-popup';
+            notification.style.color = '#ff4444';
+            notification.style.fontSize = '20px';
+            notification.textContent = `SPEED UP! Lv.${level}`;
+            
+            notification.style.left = '150px';
+            notification.style.top = '250px';
+            
+            gameBoard.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 2000);
+        }
+        
+        function showChainDisplay(chainCount) {
+            const chainDisplay = document.getElementById('chain-display');
+            const chainText = document.getElementById('chain-text');
+            
+            if (chainCount > 1) {
+                chainText.textContent = `${chainCount}連鎖！`;
+                chainDisplay.style.display = 'block';
+                chainDisplay.style.backgroundColor = `hsl(${(chainCount * 30) % 360}, 70%, 50%)`;
+            }
+        }
+        
+        function hideChainDisplay() {
+            chainDisplayTimer = setTimeout(() => {
+                document.getElementById('chain-display').style.display = 'none';
+            }, 2000);
+        }
+        
+        function showScorePopup(earnedScore, chainCount) {
+            const gameBoard = document.getElementById('game-board');
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            
+            let text = `+${earnedScore}`;
+            if (chainCount > 1) {
+                text += ` (${chainCount}連鎖)`;
+            }
+            popup.textContent = text;
+            
+            // ランダムな位置に表示
+            popup.style.left = Math.random() * 200 + 100 + 'px';
+            popup.style.top = Math.random() * 100 + 50 + 'px';
+            
+            gameBoard.appendChild(popup);
+            
+            // 1.5秒後に削除
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    popup.parentNode.removeChild(popup);
+                }
+            }, 1500);
+        }
+
+        function startGame() {
+            initBoard();
+            createGameBoard();
+            gameRunning = true;
+            gamePaused = false;
+            nextPiece = null;
+            spawnNewPiece();
+            initBGM();
+            initSoundEffects();
+            gameLoop();
+        }
+        
+        function initBGM() {
+            try {
+                if (!bgmAudio) {
+                    // 複数のBGMファイルパスを試行
+                    const bgmPaths = [
+                        './runnninng.mp3',
+                        'runnninng.mp3',
+                        '../runnninng.mp3',
+                        './audio/runnninng.mp3'
+                    ];
+                    
+                    bgmAudio = new Audio();
+                    bgmAudio.loop = true;
+                    bgmAudio.volume = 0.3;
+                    bgmAudio.playbackRate = 1.0;
+                    bgmAudio.preload = 'auto';
+                    
+                    // 複数パスを順番に試行
+                    let pathIndex = 0;
+                    
+                    function tryNextPath() {
+                        if (pathIndex < bgmPaths.length) {
+                            console.log(`Trying BGM path ${pathIndex + 1}/${bgmPaths.length}: ${bgmPaths[pathIndex]}`);
+                            bgmAudio.src = bgmPaths[pathIndex];
+                            pathIndex++;
+                        } else {
+                            console.log('All BGM paths failed, BGM disabled');
+                            bgmEnabled = false;
+                        }
+                    }
+                    
+                    bgmAudio.addEventListener('error', (e) => {
+                        console.log(`BGM load error for path: ${bgmAudio.src}`, e);
+                        tryNextPath();
+                    });
+                    
+                    bgmAudio.addEventListener('canplaythrough', () => {
+                        console.log(`BGM loaded successfully: ${bgmAudio.src}`);
+                    });
+                    
+                    // 最初のパスを試行
+                    tryNextPath();
+                }
+                
+                if (bgmEnabled) {
+                    const playPromise = bgmAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(e => {
+                            console.log('BGM autoplay blocked, waiting for user interaction:', e);
+                            document.addEventListener('click', startBGMOnFirstClick, { once: true });
+                            document.addEventListener('touchstart', startBGMOnFirstClick, { once: true });
+                            document.addEventListener('keydown', startBGMOnFirstClick, { once: true });
+                        });
+                    }
+                }
+            } catch (error) {
+                console.log('BGM initialization error:', error);
+                bgmEnabled = false;
+            }
+        }
+        
+        let audioContext = null;
+        
+        function initSoundEffects() {
+            // モバイル対応のためユーザーインタラクション後にAudioContextを初期化
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // モバイルでサスペンド状態の場合、レジュームを試行
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().catch(e => {
+                        console.log('AudioContext resume failed:', e);
+                    });
+                }
+                
+                // プヨ消し音を生成
+                soundEffects.clear = function() {
+                    if (!audioContext || audioContext.state !== 'running') return;
+                    
+                    try {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+                        
+                        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.1);
+                    } catch (e) {
+                        console.log('Clear sound failed:', e);
+                    }
+                };
+                
+                // 連鎖音を生成
+                soundEffects.chain = function(chainCount) {
+                    if (!audioContext || audioContext.state !== 'running') return;
+                    
+                    try {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        const baseFreq = 600 + (chainCount * 100);
+                        oscillator.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, audioContext.currentTime + 0.2);
+                        
+                        gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.2);
+                    } catch (e) {
+                        console.log('Chain sound failed:', e);
+                    }
+                };
+                
+                // ゲームオーバー音を生成
+                soundEffects.gameOver = function() {
+                    if (!audioContext || audioContext.state !== 'running') return;
+                    
+                    try {
+                        // 複数の音を重ねてドラマティックな効果を作る
+                        
+                        // メインの下降音
+                        const mainOsc = audioContext.createOscillator();
+                        const mainGain = audioContext.createGain();
+                        mainOsc.connect(mainGain);
+                        mainGain.connect(audioContext.destination);
+                        
+                        mainOsc.type = 'square';
+                        mainOsc.frequency.setValueAtTime(440, audioContext.currentTime);
+                        mainOsc.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 1.0);
+                        
+                        mainGain.gain.setValueAtTime(0.4, audioContext.currentTime);
+                        mainGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.0);
+                        
+                        // サブの下降音（オクターブ下）
+                        const subOsc = audioContext.createOscillator();
+                        const subGain = audioContext.createGain();
+                        subOsc.connect(subGain);
+                        subGain.connect(audioContext.destination);
+                        
+                        subOsc.type = 'sawtooth';
+                        subOsc.frequency.setValueAtTime(220, audioContext.currentTime);
+                        subOsc.frequency.exponentialRampToValueAtTime(55, audioContext.currentTime + 1.0);
+                        
+                        subGain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                        subGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.0);
+                        
+                        // ノイズ効果
+                        const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.3, audioContext.sampleRate);
+                        const noiseData = noiseBuffer.getChannelData(0);
+                        for (let i = 0; i < noiseData.length; i++) {
+                            noiseData[i] = (Math.random() - 0.5) * 0.5;
+                        }
+                        
+                        const noiseSource = audioContext.createBufferSource();
+                        const noiseGain = audioContext.createGain();
+                        const noiseFilter = audioContext.createBiquadFilter();
+                        
+                        noiseSource.buffer = noiseBuffer;
+                        noiseSource.connect(noiseFilter);
+                        noiseFilter.connect(noiseGain);
+                        noiseGain.connect(audioContext.destination);
+                        
+                        noiseFilter.type = 'lowpass';
+                        noiseFilter.frequency.setValueAtTime(1000, audioContext.currentTime);
+                        noiseFilter.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
+                        
+                        noiseGain.gain.setValueAtTime(0.2, audioContext.currentTime);
+                        noiseGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                        
+                        // 全て同時再生
+                        const currentTime = audioContext.currentTime;
+                        mainOsc.start(currentTime);
+                        mainOsc.stop(currentTime + 1.0);
+                        
+                        subOsc.start(currentTime);
+                        subOsc.stop(currentTime + 1.0);
+                        
+                        noiseSource.start(currentTime);
+                        
+                    } catch (e) {
+                        console.log('Game over sound failed:', e);
+                    }
+                };
+            } catch (error) {
+                console.log('Sound effects not available:', error);
+                soundEffects.clear = () => {};
+                soundEffects.chain = () => {};
+                soundEffects.gameOver = () => {};
+            }
+        }
+        
+        function resumeAudioContext() {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+        
+        function startBGMOnFirstClick() {
+            if (bgmAudio && bgmEnabled) {
+                // BGMの再生状態を確認
+                if (bgmAudio.readyState >= 2) { // HAVE_CURRENT_DATA 以上
+                    bgmAudio.play().catch(e => {
+                        console.log('BGM play failed:', e);
+                        // 再生に失敗した場合、BGMを無効化
+                        bgmEnabled = false;
+                    });
+                } else {
+                    console.log('BGM not ready, waiting for load...');
+                    bgmAudio.addEventListener('canplay', () => {
+                        bgmAudio.play().catch(e => {
+                            console.log('BGM play failed after load:', e);
+                            bgmEnabled = false;
+                        });
+                    }, { once: true });
+                }
+            }
+            // AudioContextも同時に有効化
+            resumeAudioContext();
+        }
+        
+        function toggleBGM() {
+            if (!bgmAudio) return;
+            
+            if (bgmAudio.paused) {
+                // BGMが読み込まれているか確認
+                if (bgmAudio.readyState >= 2) {
+                    bgmAudio.play().then(() => {
+                        bgmEnabled = true;
+                        // 再生時に現在のスピードを適用
+                        updateBGMSpeed(lastSpeedLevel);
+                    }).catch(e => {
+                        console.log('BGM toggle play failed:', e);
+                        bgmEnabled = false;
+                    });
+                } else {
+                    console.log('BGM not loaded for toggle');
+                    bgmEnabled = false;
+                }
+            } else {
+                bgmAudio.pause();
+                bgmEnabled = false;
+            }
+        }
+        
+        function togglePause() {
+            if (!gameRunning) return;
+            
+            gamePaused = !gamePaused;
+            if (!gamePaused) {
+                gameLoop(); // 再開時にゲームループを再開
+                if (bgmAudio && bgmEnabled) {
+                    bgmAudio.play();
+                }
+            } else {
+                if (bgmAudio) {
+                    bgmAudio.pause();
+                }
+            }
+        }
+
+        // キーボード操作
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning || !currentPiece) return;
+            
+            switch(e.key) {
+                case 'a':
+                case 'A':
+                    if (!gamePaused) {
+                        currentPiece.move(-1, 0);
+                        if (!currentPiece.isValidPosition()) {
+                            currentPiece.move(1, 0);
+                        }
+                        renderBoard();
+                    }
+                    break;
+                    
+                case 'd':
+                case 'D':
+                    if (!gamePaused) {
+                        currentPiece.move(1, 0);
+                        if (!currentPiece.isValidPosition()) {
+                            currentPiece.move(-1, 0);
+                        }
+                        renderBoard();
+                    }
+                    break;
+                    
+                case 's':
+                case 'S':
+                    if (!gamePaused) {
+                        clearTimeout(fallTimer);
+                        gameLoop();
+                    }
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (!gamePaused) {
+                        currentPiece.rotate();
+                        renderBoard();
+                    }
+                    break;
+                    
+                case 'p':
+                case 'P':
+                    togglePause();
+                    break;
+                    
+                case 'm':
+                case 'M':
+                    toggleBGM();
+                    break;
+            }
+        });
+
+        // タッチコントロールのイベントリスナー
+        function setupTouchControls() {
+            document.getElementById('btn-left').addEventListener('click', () => {
+                resumeAudioContext(); // タッチ操作でAudioContextを有効化
+                if (!gameRunning || !currentPiece || gamePaused) return;
+                currentPiece.move(-1, 0);
+                if (!currentPiece.isValidPosition()) {
+                    currentPiece.move(1, 0);
+                }
+                renderBoard();
+            });
+            
+            document.getElementById('btn-right').addEventListener('click', () => {
+                if (!gameRunning || !currentPiece || gamePaused) return;
+                currentPiece.move(1, 0);
+                if (!currentPiece.isValidPosition()) {
+                    currentPiece.move(-1, 0);
+                }
+                renderBoard();
+            });
+            
+            document.getElementById('btn-down').addEventListener('click', () => {
+                if (!gameRunning || !currentPiece || gamePaused) return;
+                clearTimeout(fallTimer);
+                gameLoop();
+            });
+            
+            document.getElementById('btn-rotate').addEventListener('click', () => {
+                resumeAudioContext(); // タッチ操作でAudioContextを有効化
+                if (!gameRunning || !currentPiece || gamePaused) return;
+                currentPiece.rotate();
+                renderBoard();
+            });
+            
+            document.getElementById('btn-pause').addEventListener('click', () => {
+                togglePause();
+            });
+            
+            document.getElementById('btn-bgm').addEventListener('click', () => {
+                toggleBGM();
+            });
+            
+            // タッチイベントの追加（長押し対応）
+            let touchInterval = null;
+            
+            ['btn-left', 'btn-right', 'btn-down'].forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    btn.click();
+                    
+                    if (btnId === 'btn-down') {
+                        touchInterval = setInterval(() => {
+                            btn.click();
+                        }, 100);
+                    } else {
+                        touchInterval = setInterval(() => {
+                            btn.click();
+                        }, 150);
+                    }
+                });
+                
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    clearInterval(touchInterval);
+                });
+                
+                btn.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    clearInterval(touchInterval);
+                });
+            });
+        }
+
+        // ゲーム開始
+        startGame();
+        setupTouchControls();
+    </script>
+</body>
+</html>
